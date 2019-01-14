@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import { FormGroup, Input } from 'reactstrap';
 import { tableTissueFilter } from '../../modules/actions/table';
 import { fetchTissues } from '../../modules/actions/tissues';
+import { setParamsInUrl } from '../../utils';
 
 class Chip extends React.Component {
   constructor(props) {
@@ -12,6 +13,9 @@ class Chip extends React.Component {
   tissueChanged = ev => {
     const newTissue = ev.target.value;
     this.props.setTissue(newTissue);
+    setParamsInUrl({
+      tissue: newTissue
+    });
   };
 
   componentDidMount() {

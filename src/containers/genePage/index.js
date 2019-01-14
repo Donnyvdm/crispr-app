@@ -1,6 +1,3 @@
-import identity from 'lodash.identity';
-import pickBy from 'lodash.pickby';
-import queryString from 'qs';
 import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
@@ -8,7 +5,10 @@ import { withRouter } from 'react-router';
 import UniprotLogo from '../../assets/UniprotLogo.gif';
 import EnsemblLogo from '../../assets/EnsemblLogo.jpg';
 import OpenTargetsLogo from '../../assets/OpenTargetsLogo.png';
+import GeneCardsLogo from '../../assets/logo_genecards.png';
 import GeneEssentialities from '../geneEssentialities';
+import { getParamsFromUrl } from '../../utils';
+import { Tooltip } from 'reactstrap';
 
 function GeneName(props) {
   const { gene } = props;
@@ -57,6 +57,11 @@ function ExternalLinks(props) {
           link={`https://www.targetvalidation.org/target/${ensemblId}/associations`}
           width="40"
         />
+        <LogoExternalLink
+          src={GeneCardsLogo}
+          link={`https://www.genecards.org/cgi-bin/carddisp.pl?gene=${geneSymbol}`}
+          width="80"
+        />
       </div>
     );
   }
@@ -69,43 +74,29 @@ class GenePage extends React.Component {
 
     this.state = {
       gene: null,
-      model: null
+      model: null,
+      newGeneFromUrl: null
     };
   }
 
-  getTerm = (loc, type) => {
-    // The term can be in the pathname (table is part of the genePage or model pages
-    // or in the search (table page)
-    const index = loc.pathname.indexOf(`${type}/`);
-    if (index !== -1) {
-      const parts = loc.pathname.split('/');
-      return parts[parts.length - 1];
-    }
-
-    const search = queryString.parse(loc.search);
-    return search[type];
-  };
-
-  getParamsFromUrl = loc => {
-    const gene = this.getTerm(loc, 'gene');
-    const model = this.getTerm(loc, 'model');
-    const tissue = this.getTerm(loc, 'tissue');
-
-    return pickBy({ gene, model, tissue }, identity);
-  };
-
   componentDidMount() {
-    const params = this.getParamsFromUrl(this.props.location);
+    const params = getParamsFromUrl(this.props.location);
     this.setState({
       gene: params.gene,
       model: params.model
+    });
+
+    this.props.history.listen(() => {
+      this.setState({
+        newGeneFromUrl: getParamsFromUrl(this.props.history.location).gene
+      });
     });
   }
 
   render() {
     const { gene, model, tissue, scoreRange, geneInfo } = this.props; // This comes from the redux state
     // TODO: Encode the score range in the Location? (and other parameters)
-    const { gene: geneLoc, model: modelLoc } = this.state; // This comes from the component state
+    const { newGeneFromUrl, gene: geneLoc, model: modelLoc } = this.state; // This comes from the component state
 
     return (
       <div
@@ -117,12 +108,12 @@ class GenePage extends React.Component {
         >
           <ExternalLinks geneInfo={geneInfo} />
 
-          <h2>Gene: {gene || geneLoc}</h2>
+          <h2>Gene: {newGeneFromUrl || gene || geneLoc}</h2>
           <GeneName gene={geneInfo} />
         </div>
         <div style={{ paddingLeft: '30px', paddingRight: '30px' }}>
           <GeneEssentialities
-            gene={gene || geneLoc}
+            gene={newGeneFromUrl || gene || geneLoc}
             model={model || modelLoc}
             tissue={tissue}
             scoreRange={scoreRange}

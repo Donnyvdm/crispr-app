@@ -96,7 +96,6 @@ class CustomTable extends React.Component {
     const { sort, sortDirection, pageSize, pageNumber } = this.state;
 
     const searchAndFilter = this.combineSearchAndFilter();
-    // const searchAndFilter = mergeFilters([...this.state.filter, this.state.search]);
 
     const params = {
       sort: sortDirection === -1 ? `-${sort}` : sort,
@@ -119,7 +118,12 @@ class CustomTable extends React.Component {
   };
 
   setExtent = () => {
-    this.getParamsNoScoreRange().then(filter => {
+    // We show the table spinner when the extent is loading
+    this.setState({
+      loading: true
+    });
+
+    return this.getParamsNoScoreRange().then(filter => {
       return axios
         .get(`${API_BASEURL}/datasets/crispr`, {
           params: {
@@ -143,7 +147,7 @@ class CustomTable extends React.Component {
             .then(resp => {
               const max = resp.data.data[0].attributes.fc_corrected;
               this.props.setScoreExtent([min, max]);
-              this.props.setScoreRange([min, max]);
+              return this.props.setScoreRange([min, max]);
             });
         });
     });
@@ -151,7 +155,6 @@ class CustomTable extends React.Component {
 
   fetch = () => {
     const params = this.fetchParams();
-
     this.setState({
       loading: true
     });
@@ -284,16 +287,44 @@ class CustomTable extends React.Component {
     // this.setExtent();
   }
 
+  rangesAreEqual(prevRange, currRange) {
+    if (prevRange === currRange) {
+      return true;
+    }
+    if (prevRange === null && currRange !== null) {
+      return false;
+    }
+    if (prevRange !== null && currRange === null) {
+      return false;
+    }
+    return prevRange[0] === currRange[0] && prevRange[1] === currRange[1];
+  }
+
   componentDidUpdate(prevProps) {
+    // If nothing has changed, don't fetch new data
     if (
       prevProps.tissue === this.props.tissue &&
       prevProps.gene === this.props.gene &&
       prevProps.model === this.props.model &&
-      prevProps.scoreRange === this.props.scoreRange
+      this.rangesAreEqual(prevProps.scoreRange, this.props.scoreRange)
     ) {
       return;
     }
-    this.getParams(this.fetch);
+
+    // If anything but the range has changed, set a new extent (a fetch is automatically triggered in the next condition because of the extent change)
+    if (
+      (prevProps.tissue !== this.props.tissue ||
+        prevProps.gene !== this.props.gene ||
+        prevProps.model !== this.props.model) &&
+      this.rangesAreEqual(prevProps.scoreRange, this.props.scoreRange)
+    ) {
+      this.getParams(this.setExtent);
+    }
+
+    // If there is a change in anything, fetch new data
+    if (!this.rangesAreEqual(prevProps.scoreRange, this.props.scoreRange)) {
+      this.getParams(this.fetch);
+    }
   }
 
   goPrev = () => {
@@ -342,6 +373,9 @@ class CustomTable extends React.Component {
       return;
     }
 
+    this.setState({
+      pageNumber: 1
+    });
     const searchFilter = {
       or: [
         {
@@ -512,12 +546,8 @@ const mapDispatchToProps = dispatch => {
     selectRow: rowData => dispatch(selectRow(rowData)),
     selectGene: gene => dispatch(selectGene(gene)),
     selectModel: model => dispatch(selectModel(model)),
-    setScoreExtent: extent =>
-      dispatch(scoreExtent([extent[0] - 0.1, extent[1] + 0.1])),
-    setScoreRange: range =>
-      dispatch(
-        scoreRange([+range[0].toFixed(1) - 0.1, +range[1].toFixed(1) + 0.1])
-      )
+    setScoreExtent: extent => dispatch(scoreExtent([extent[0], extent[1]])),
+    setScoreRange: range => dispatch(scoreRange([+range[0], +range[1]]))
   };
 };
 

@@ -4,8 +4,16 @@ import queryString from 'qs';
 import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
-
 import ModelEssentialities from '../modelEssentialities';
+import { getParamsFromUrl } from '../../utils';
+
+function TissueName(props) {
+  const { model } = props;
+  if (!model.data) {
+    return <div />;
+  }
+  return <div>Tissue: {model.data.attributes.tissue}</div>;
+}
 
 function LogoExternalLink(props) {
   const { src, link, width } = props;
@@ -42,42 +50,28 @@ class ModelPage extends React.Component {
 
     this.state = {
       gene: null,
-      model: null
+      model: null,
+      newModelFromUrl: null
     };
   }
 
-  getTerm = (loc, type) => {
-    // The term can be in the pathname (table is part of the genePage or model pages
-    // or in the search (table page)
-    const index = loc.pathname.indexOf(`${type}/`);
-    if (index !== -1) {
-      const parts = loc.pathname.split('/');
-      return parts[parts.length - 1];
-    }
-
-    const search = queryString.parse(loc.search);
-    return search[type];
-  };
-
-  getParamsFromUrl = loc => {
-    const gene = this.getTerm(loc, 'gene');
-    const model = this.getTerm(loc, 'model');
-    const tissue = this.getTerm(loc, 'tissue');
-
-    return pickBy({ gene, model, tissue }, identity);
-  };
-
   componentDidMount() {
-    const params = this.getParamsFromUrl(this.props.location);
+    const params = getParamsFromUrl(this.props.location);
     this.setState({
       gene: params.gene,
       model: params.model
+    });
+
+    this.props.history.listen(() => {
+      this.setState({
+        newModelFromUrl: getParamsFromUrl(this.props.history.location).model
+      });
     });
   }
 
   render() {
     const { gene, model, tissue, scoreRange, modelInfo } = this.props; // This comes from the redux state
-    const { gene: geneLoc, model: modelLoc } = this.state; // This comes from the internal state
+    const { newModelFromUrl, gene: geneLoc, model: modelLoc } = this.state; // This comes from the internal state
 
     return (
       <div
@@ -85,16 +79,17 @@ class ModelPage extends React.Component {
       >
         <div
           className="section"
-          style={{ borderBottom: '1px solid green', paddingBottom: '40px' }}
+          style={{ borderBottom: '1px solid green', paddingBottom: '20px' }}
         >
           <ExternalLinks modelInfo={modelInfo} />
 
-          <h2>Model: {model || modelLoc}</h2>
+          <h2>Model: {newModelFromUrl || model || modelLoc}</h2>
+          <TissueName model={modelInfo} />
         </div>
         <div style={{ paddingLeft: '30px', paddingRight: '30px' }}>
           <ModelEssentialities
             gene={gene || geneLoc}
-            model={model || modelLoc}
+            model={newModelFromUrl || model || modelLoc}
             tissue={tissue} // Is this needed in the model page??
             scoreRange={scoreRange}
           />

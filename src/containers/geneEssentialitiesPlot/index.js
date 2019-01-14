@@ -502,12 +502,23 @@ class geneEssentialitiesPlot extends React.Component {
 
   tissueFilterElement = (tissue, key) => {
     return (
-      <div
-        style={{ color: tissue ? colors[tissue.tissue] : '' }}
-        key={key}
-        onMouseOver={() => this.mouseOverTissue(tissue)}
-      >
-        {tissue ? tissue.tissue : ''}
+      <div>
+        <div
+          style={{
+            display: 'inline-block',
+            backgroundColor: tissue ? colors[tissue.tissue] : '',
+            width: '10px',
+            height: '10px',
+            borderRadius: '5px'
+          }}
+        />
+        <span
+          style={{ paddingLeft: '5px' }}
+          key={key}
+          onMouseOver={() => this.mouseOverTissue(tissue)}
+        >
+          {tissue ? tissue.tissue : ''}
+        </span>
       </div>
     );
   };
@@ -537,13 +548,16 @@ class geneEssentialitiesPlot extends React.Component {
   render() {
     const { marginTop, marginLeft, height, brushHeight, brushOffset } = this;
     const { containerWidth, attributeToPlot } = this.state;
+    const { data, gene, model, tissues, contextPage } = this.props;
 
     const yAxisLabel =
       this.state.attributeToPlot === 'fc_corrected'
         ? FC_CORRECTED_LABEL
         : LOSS_OF_FITNESS_SCORE_LABEL;
 
-    if (!this.props.data.length) {
+    const xAxisLabel = contextPage === 'gene' ? 'Cell lines' : 'Genes';
+
+    if (!data.length) {
       return (
         <div
           id="loading"
@@ -594,8 +608,8 @@ class geneEssentialitiesPlot extends React.Component {
           </ButtonGroup>
         </div>
 
-        {this.props.gene &&
-          this.props.model && (
+        {gene &&
+          model && (
             <div style={{ marginLeft: `${marginLeft}px` }}>
               <Button
                 outline
@@ -603,7 +617,7 @@ class geneEssentialitiesPlot extends React.Component {
                 onClick={() => this.highlightDefaultNode()}
                 active={this.defaultNodeHighlighted()}
               >
-                Highlight {this.props.gene} - {this.props.model}
+                Highlight {gene} - {model}
               </Button>
             </div>
           )}
@@ -694,7 +708,7 @@ class geneEssentialitiesPlot extends React.Component {
                 textAnchor="middle"
                 transform={`translate(${containerWidth / 2}, ${height - 10})`}
               >
-                Cell lines
+                {xAxisLabel}
               </text>
 
               <text
@@ -729,7 +743,7 @@ class geneEssentialitiesPlot extends React.Component {
               cursor: 'pointer'
             }}
           >
-            {this.tissuesInBlocks(this.props.tissues, 3)}
+            {contextPage === 'gene' && this.tissuesInBlocks(tissues, 3)}
           </div>
         </div>
       </React.Fragment>
