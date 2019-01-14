@@ -16,7 +16,7 @@
     "bootstrap": "^4.0.0",
     "chance": "^1.0.13",
     "classnames": "^2.2.5",
-    "d3": "^4.13.0",
+    "d3": "^5.7.0",
     "d3-scale-chromatic": "^1.2.0",
     "datatables.net": "^1.10.16",
     "datatables.net-bs4": "^1.10.16",
@@ -70,7 +70,7 @@
     "watch-css": "npm run build-css && node-sass-chokidar src/ -o src/ --watch --recursive",
     "precommit": "lint-staged",
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "npm run build-css && react-scripts build",
     "test": "react-scripts test --env=jsdom"
   }
 }
