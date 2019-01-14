@@ -502,7 +502,7 @@ class geneEssentialitiesPlot extends React.Component {
 
   tissueFilterElement = (tissue, key) => {
     return (
-      <div>
+      <div key={key}>
         <div
           style={{
             display: 'inline-block',
